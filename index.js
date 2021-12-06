@@ -27,7 +27,21 @@ const fs = require("fs");
 const http = require('http');
 
 const server = http.createServer((req,res) => {
-    res.end('Response from server');
+    const pathName = req.url;
+    //res.end('Response from server');
+
+    if(pathName === '/' || pathName === '/overview'){
+        res.end('This is overview');
+    }else if(pathName === '/product'){
+        res.end('This is Product');
+    }else{
+        //fallback content
+        res.writeHead(404,{
+            'Content-type' : 'text/htm',
+            'my-own-header':'hello header'
+        });
+        res.end('Page not Found !!');
+    }
 });
 
 //listen to server
