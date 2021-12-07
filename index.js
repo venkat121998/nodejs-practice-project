@@ -34,6 +34,22 @@ const server = http.createServer((req,res) => {
         res.end('This is overview');
     }else if(pathName === '/product'){
         res.end('This is Product');
+    } else if(pathName === '/api'){
+
+        //This way of accessing file everytime and sending data to server is not efficient as the data doesnt change for every request
+        //Instead we can use sync file read at beginning and solve this problem
+
+        fs.readFile(`${__dirname}/dev-data/data.json`,'utf-8',(err,data)=>{
+            const dataObj = JSON.parse(data);
+
+            //setting header
+            res.writeHead(200,{
+                'Content-type':'application/json'
+            })
+
+            //we send data as dataobj is not accepted by node js in res.end function
+            res.end(data);
+        });
     }else{
         //fallback content
         res.writeHead(404,{
