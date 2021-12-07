@@ -25,20 +25,68 @@ const fs = require("fs");
 ///////////
 //Server
 const http = require('http');
+const url = require('url');
+//read templates
+const tempOverview = fs.readFileSync(
+    `${__dirname}/templates/template-overview.html`,
+    'utf-8'
+  );
+  const tempCard = fs.readFileSync(
+    `${__dirname}/templates/template-card.html`,
+    'utf-8'
+  );
+  const tempProduct = fs.readFileSync(
+    `${__dirname}/templates/template-product.html`,
+    'utf-8'
+  );
+
+const replaceTemplate =(temp,product) => {
+    let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
+  output = output.replace(/{%IMAGE%}/g, product.image);
+  output = output.replace(/{%PRICE%}/g, product.price);
+  output = output.replace(/{%FROM%}/g, product.from);
+  output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
+  output = output.replace(/{%QUANTITY%}/g, product.quantity);
+  output = output.replace(/{%DESCRIPTION%}/g, product.description);
+  output = output.replace(/{%ID%}/g, product.id);
+  
+  if(!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
+  return output;
+}
 
 //read File synchronously for api
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`,'utf-8');
 const dataObj = JSON.parse(data);
 
 const server = http.createServer((req,res) => {
-    const pathName = req.url;
+    const { query, pathname } = url.parse(req.url, true)
+    //const pathName = req.url;
     //res.end('Response from server');
 
-    if(pathName === '/' || pathName === '/overview'){
-        res.end('This is overview');
-    }else if(pathName === '/product'){
-        res.end('This is Product');
-    } else if(pathName === '/api'){
+    // console.log(req.url);
+    // console.log(url.parse(req.url,true));
+
+    if(pathname === '/' || pathname === '/overview'){
+        res.writeHead(200, {
+            'Content-type': 'text/html'
+          });
+      
+        const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join('');
+        const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
+        res.end(output);
+
+        //PRODUCT
+    }else if(pathname === '/product'){
+        res.writeHead(200, {
+            'Content-type': 'text/html'
+          });
+        //console.log(query);
+        const product = dataObj[query.id];
+        const output = replaceTemplate(tempProduct, product)
+        res.end(output);
+
+        //API
+    } else if(pathname === '/api'){
 
         // //This way of accessing file everytime and sending data to server is not efficient as the data doesnt change for every request
         // //Instead we can use sync file read at beginning and solve this problem
@@ -61,6 +109,9 @@ const server = http.createServer((req,res) => {
         })
         //we send data as dataobj is not accepted by node js in res.end function
         res.end(data);
+
+
+        //Page Not Found
     }else{
         //fallback content
         res.writeHead(404,{
